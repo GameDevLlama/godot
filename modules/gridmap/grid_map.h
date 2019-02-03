@@ -113,7 +113,7 @@ class GridMap : public Spatial {
 		RID collision_debug_instance;
 
 		bool dirty;
-		RID static_body;
+		Vector<RID> static_bodies;
 		Map<IndexKey, NavMesh> navmesh_ids;
 	};
 
