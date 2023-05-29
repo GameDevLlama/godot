@@ -322,13 +322,16 @@ void GridMap::set_cell_item(int p_x, int p_y, int p_z, int p_item, int p_rot) {
 		//create octant because it does not exist
 		Octant *g = memnew(Octant);
 		g->dirty = true;
-		for (size_t i = 0; i < mesh_library->get_item_shapes(p_item).size(); i++) {
-            RID static_body = mesh_library->get_item_shapes(p_item)[i].shape->get_rid();
-            PhysicsServer::get_singleton()->body_attach_object_instance_id(g->static_body, get_instance_id());
-            PhysicsServer::get_singleton()->body_set_collision_layer(g->static_body, collision_layer);
-            PhysicsServer::get_singleton()->body_set_collision_mask(g->static_body, collision_mask);
-			g->static_bodies.add(static_body);
-        }
+		// for (size_t i = 0; i < mesh_library->get_item_shapes(p_item).size(); i++) {
+		// RID shape = mesh_library->get_item_shapes(p_item)[i].shape->get_rid();
+        // RID static_body = mesh_library->get_item_shapes(p_item)[i].shape->get_rid();
+		RID static_body = PhysicsServer::get_singleton()->body_create(PhysicsServer::BODY_MODE_STATIC);
+		// PhysicsServer::get_singleton()->body_set_shape(static_body, i, shape);
+        PhysicsServer::get_singleton()->body_attach_object_instance_id(static_body, get_instance_id());
+        PhysicsServer::get_singleton()->body_set_collision_layer(static_body, collision_layer);
+        PhysicsServer::get_singleton()->body_set_collision_mask(static_body, collision_mask);
+		g->static_bodies.push_back(static_body);
+        // }
 		SceneTree *st = SceneTree::get_singleton();
 
 		if (st && st->is_debugging_collisions_hint()) {
@@ -517,7 +520,23 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 				continue;
 
 			for (int i = 0; i < g.static_bodies.size(); i++) {
-				PhysicsServer::get_singleton()->body_add_shape(g.static_bodies[i], shapes[i].shape->get_rid(), xform * shapes[i].local_transform);
+				RID static_body = g.static_bodies[i];
+				PhysicsServer::get_singleton()->body_add_shape(static_body, shapes[i].shape->get_rid(), xform * shapes[i].local_transform);
+
+				/*if (physics_material_override.is_null()) {
+					PhysicsServer::get_singleton()->body_set_param(static_body, PhysicsServer::BODY_PARAM_BOUNCE, 0);
+					PhysicsServer::get_singleton()->body_set_param(static_body, PhysicsServer::BODY_PARAM_FRICTION, 1);
+				} else {
+					PhysicsServer::get_singleton()->body_set_param(static_body, PhysicsServer::BODY_PARAM_BOUNCE, physics_material_override->computed_bounce());
+					PhysicsServer::get_singleton()->body_set_param(static_body, PhysicsServer::BODY_PARAM_FRICTION, physics_material_override->computed_friction());
+				}*/
+
+				PhysicsServer::get_singleton()->body_set_param(static_body, PhysicsServer::BODY_PARAM_BOUNCE,
+						PhysicsServer::get_singleton()->body_get_param(static_body, PhysicsServer::BODY_PARAM_BOUNCE));
+
+				PhysicsServer::get_singleton()->body_set_param(static_body, PhysicsServer::BODY_PARAM_FRICTION,
+						PhysicsServer::get_singleton()->body_get_param(static_body, PhysicsServer::BODY_PARAM_FRICTION));
+
 			}
 			if (g.collision_debug.is_valid()) {
 				shapes.write[i].shape->add_vertices_to_array(col_debug, xform * shapes[i].local_transform);
@@ -599,7 +618,7 @@ bool GridMap::_octant_update(const OctantKey &p_key) {
 
 void GridMap::_reset_physic_bodies_collision_filters() {
 	for (Map<OctantKey, Octant *>::Element *E = octant_map.front(); E; E = E->next()) {
-		for (int i = 0; i < g.static_bodies.size(); i++) {
+		for (int i = 0; i < E->get()->static_bodies.size(); i++) {
 			PhysicsServer::get_singleton()->body_set_collision_layer(E->get()->static_bodies[i], collision_layer);
 			PhysicsServer::get_singleton()->body_set_collision_mask(E->get()->static_bodies[i], collision_mask);
 		}

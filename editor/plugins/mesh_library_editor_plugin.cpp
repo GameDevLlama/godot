@@ -101,6 +101,7 @@ void MeshLibraryEditor::_import_scene(Node *p_scene, Ref<MeshLibrary> p_library,
 		p_library->set_item_mesh(id, mesh);
 
 		Vector<MeshLibrary::ShapeData> collisions;
+		Vector<::StaticBody> static_bodies;
 
 		for (int j = 0; j < mi->get_child_count(); j++) {
 
@@ -109,6 +110,8 @@ void MeshLibraryEditor::_import_scene(Node *p_scene, Ref<MeshLibrary> p_library,
 				continue;
 
 			StaticBody *sb = Object::cast_to<StaticBody>(child2);
+			static_bodies.push_back(*sb);
+
 			List<uint32_t> shapes;
 			sb->get_shape_owners(&shapes);
 
@@ -133,6 +136,7 @@ void MeshLibraryEditor::_import_scene(Node *p_scene, Ref<MeshLibrary> p_library,
 			}
 		}
 
+		p_library->set_item_static_bodies(id, static_bodies);
 		p_library->set_item_shapes(id, collisions);
 
 		Ref<NavigationMesh> navmesh;

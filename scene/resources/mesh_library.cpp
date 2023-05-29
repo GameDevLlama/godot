@@ -95,6 +95,7 @@ void MeshLibrary::_get_property_list(List<PropertyInfo> *p_list) const {
 		String name = "item/" + itos(E->key()) + "/";
 		p_list->push_back(PropertyInfo(Variant::STRING, name + "name"));
 		p_list->push_back(PropertyInfo(Variant::OBJECT, name + "mesh", PROPERTY_HINT_RESOURCE_TYPE, "Mesh"));
+		p_list->push_back(PropertyInfo(Variant::OBJECT, name + "static_body", PROPERTY_HINT_RESOURCE_TYPE, "StaticBody"));
 		p_list->push_back(PropertyInfo(Variant::ARRAY, name + "shapes"));
 		p_list->push_back(PropertyInfo(Variant::OBJECT, name + "navmesh", PROPERTY_HINT_RESOURCE_TYPE, "NavigationMesh"));
 		p_list->push_back(PropertyInfo(Variant::OBJECT, name + "preview", PROPERTY_HINT_RESOURCE_TYPE, "Texture", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_EDITOR_HELPER));
@@ -116,10 +117,20 @@ void MeshLibrary::set_item_name(int p_item, const String &p_name) {
 	emit_changed();
 	_change_notify();
 }
+
 void MeshLibrary::set_item_mesh(int p_item, const Ref<Mesh> &p_mesh) {
 
 	ERR_FAIL_COND(!item_map.has(p_item));
 	item_map[p_item].mesh = p_mesh;
+	notify_change_to_owners();
+	emit_changed();
+	_change_notify();
+}
+
+void MeshLibrary::set_item_static_bodies(int p_item, const Vector<StaticBody> &p_static_bodies) {
+
+	ERR_FAIL_COND(!item_map.has(p_item));
+	item_map[p_item].static_bodies = p_static_bodies;
 	notify_change_to_owners();
 	emit_changed();
 	_change_notify();
@@ -152,15 +163,23 @@ void MeshLibrary::set_item_preview(int p_item, const Ref<Texture> &p_preview) {
 	emit_changed();
 	_change_notify();
 }
+
 String MeshLibrary::get_item_name(int p_item) const {
 
 	ERR_FAIL_COND_V(!item_map.has(p_item), "");
 	return item_map[p_item].name;
 }
+
 Ref<Mesh> MeshLibrary::get_item_mesh(int p_item) const {
 
 	ERR_FAIL_COND_V(!item_map.has(p_item), Ref<Mesh>());
 	return item_map[p_item].mesh;
+}
+
+Vector<StaticBody> MeshLibrary::get_item_static_bodies(int p_item) const {
+
+	ERR_FAIL_COND_V(!item_map.has(p_item), Vector<StaticBody>());
+	return item_map[p_item].static_bodies;
 }
 
 Vector<MeshLibrary::ShapeData> MeshLibrary::get_item_shapes(int p_item) const {
